@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Products</title>
+  <style>
+    :root {
+      --bg: #f4f6f1;
+      --card: #ffffff;
+      --ink: #1b2b3a;
+      --muted: #6b7a85;
+      --accent: #0f7b6c;
+      --accent-2: #0b5f55;
+      --danger: #e74c3c;
+      --border: #e6ece7;
+      --shadow: 0 18px 40px rgba(15, 40, 32, 0.12);
+    }
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background:
+        radial-gradient(1200px 400px at 10% -10%, #e7f3ec 0%, rgba(231,243,236,0) 60%),
+        var(--bg);
+      padding: 24px;
+      color: var(--ink);
+    }
+    .card {
+      background: var(--card);
+      padding: 22px;
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    h1 { margin: 0; font-size: 1.6rem; }
+    .sub { color: var(--muted); font-size: 0.95rem; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; }
+    input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #f9fbfa;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .btn:hover { background: var(--accent-2); }
+    .btn-del { background: var(--danger); }
+    .tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(15,123,108,0.12);
+      color: var(--accent);
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    @media (max-width: 900px) {
+      .row { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div>
+        <h1>Admin Products</h1>
+        <div class="sub">Create, edit, or remove products.</div>
+      </div>
+      <button class="btn" id="refreshBtn">Refresh</button>
+    </div>
+    <table id="productsTable">
+      <thead>
+        <tr>
+          <th>ID</th><th>Title</th><th>Price</th><th>Category</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h3 style="margin-top:16px;">Add Product <span class="tag">New</span></h3>
+    <div class="row">
+      <input id="pTitle" placeholder="Title">
+      <input id="pPrice" placeholder="Price">
+      <input id="pImage" placeholder="Image URL">
+      <input id="pCategory" placeholder="Category">
+    </div>
+    <div class="row">
+      <input id="pRating" placeholder="Rating" value="4.5">
+      <input id="pRatingCount" placeholder="Rating Count" value="10">
+      <input id="pDelivery" placeholder="Delivery" value="Next day">
+      <input id="pLink" placeholder="Link" value="/cart.html">
+    </div>
+    <button class="btn" id="addBtn" style="margin-top:8px;">Add</button>
+  </div>
+
+  <script>
+    const API = "http://127.0.0.1:8000";
+    const token = localStorage.getItem("adminToken") || "";
+    if (!token) {
+      window.location.href = "/admin_login.html";
+    }
+
+    async function fetchProducts() {
+      const res = await fetch(`${API}/api/admin/products`, {
+        headers: { "X-Admin-Token": token }
+      });
+      if (!res.ok) {
+        alert("Admin session expired.");
+        localStorage.removeItem("adminToken");
+        window.location.href = "/admin_login.html";
+        return;
+      }
+      const data = await res.json();
+      const tbody = document.querySelector("#productsTable tbody");
+      tbody.innerHTML = data.map(p => `
+        <tr>
+          <td>${p.id}</td>
+          <td><input data-id="${p.id}" data-field="title" value="${p.title}"></td>
+          <td><input data-id="${p.id}" data-field="price" value="${p.price}"></td>
+          <td><input data-id="${p.id}" data-field="category" value="${p.category}"></td>
+          <td>
+            <button class="btn" onclick="saveRow(${p.id})">Save</button>
+            <button class="btn btn-del" onclick="deleteRow(${p.id})">Delete</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    async function saveRow(id) {
+      const inputs = Array.from(document.querySelectorAll(`input[data-id='${id}']`));
+      const payload = {};
+      inputs.forEach(i => payload[i.dataset.field] = i.value);
+      await fetch(`${API}/api/admin/products/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "X-Admin-Token": token },
+        body: JSON.stringify(payload)
+      });
+      fetchProducts();
+    }
+
+    async function deleteRow(id) {
+      await fetch(`${API}/api/admin/products/${id}`, {
+        method: "DELETE",
+        headers: { "X-Admin-Token": token }
+      });
+      fetchProducts();
+    }
+
+    document.getElementById("addBtn").addEventListener("click", async () => {
+      const payload = {
+        title: document.getElementById("pTitle").value.trim(),
+        price: document.getElementById("pPrice").value.trim(),
+        image: document.getElementById("pImage").value.trim(),
+        category: document.getElementById("pCategory").value.trim(),
+        rating: document.getElementById("pRating").value.trim(),
+        rating_count: document.getElementById("pRatingCount").value.trim(),
+        delivery: document.getElementById("pDelivery").value.trim(),
+        link: document.getElementById("pLink").value.trim()
+      };
+      const res = await fetch(`${API}/api/admin/products`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Admin-Token": token },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.detail || "Create failed");
+        return;
+      }
+      document.getElementById("pTitle").value = "";
+      document.getElementById("pPrice").value = "";
+      document.getElementById("pImage").value = "";
+      document.getElementById("pCategory").value = "";
+      document.getElementById("pRating").value = "4.5";
+      document.getElementById("pRatingCount").value = "10";
+      document.getElementById("pDelivery").value = "Next day";
+      document.getElementById("pLink").value = "/cart.html";
+      fetchProducts();
+    });
+
+    document.getElementById("refreshBtn").addEventListener("click", fetchProducts);
+    fetchProducts();
+  </script>
+</body>
+</html>

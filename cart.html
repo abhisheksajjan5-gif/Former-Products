@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cart</title>
+  <style>
+    :root {
+      --bg: #f5f7f2;
+      --card: #ffffff;
+      --text: #1f2a44;
+      --muted: #5d6b82;
+      --accent: #1f7a5c;
+      --accent-2: #165c46;
+      --danger: #e74c3c;
+      --border: #e4ece6;
+      --shadow: 0 18px 40px rgba(19, 43, 31, 0.08);
+    }
+    body { font-family: "Segoe UI", Tahoma, sans-serif; background: var(--bg); padding:24px; color: var(--text); }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .title { font-size: 1.6rem; font-weight:700; }
+    .sub { color: var(--muted); font-size: 0.95rem; }
+    .grid { display:grid; grid-template-columns: 1.6fr 0.9fr; gap:16px; }
+    .card { background: var(--card); border-radius:16px; padding:18px; box-shadow: var(--shadow); border:1px solid var(--border); }
+    .empty { color: var(--muted); padding: 16px 0; }
+    .item { display:grid; grid-template-columns: 64px 1fr auto; gap:12px; align-items:center; padding:10px 0; border-bottom:1px dashed var(--border); }
+    .item:last-child { border-bottom: none; }
+    .thumb { width:64px; height:64px; border-radius:12px; background:#eef4ef; object-fit:cover; }
+    .item h4 { margin:0 0 4px; font-size:1rem; }
+    .item .price { color: var(--accent); font-weight:700; }
+    .qty { display:flex; align-items:center; gap:8px; }
+    .qty-btn { width:28px; height:28px; border:1px solid var(--border); background:#fff; cursor:pointer; border-radius:8px; }
+    .remove-btn { border:1px solid var(--danger); color:var(--danger); background:#fff; padding:6px 10px; border-radius:10px; cursor:pointer; }
+    .total { font-weight:800; font-size:1.1rem; text-align:right; margin-top:12px; }
+    .btn { display:inline-block; background: var(--accent); color:#fff; padding:10px 14px; border-radius:10px; text-decoration:none; }
+    .btn:hover { background: var(--accent-2); }
+    .section-title { font-weight:700; margin-bottom:10px; }
+    .field { margin-top:10px; }
+    .field label { font-size:0.9rem; color: var(--muted); }
+    .field input, .field textarea {
+      width:100%; padding:10px; border:1px solid var(--border); border-radius:10px; margin-top:6px;
+    }
+    .qr { margin-top:12px; text-align:center; background:#f7faf8; border:1px solid var(--border); border-radius:12px; padding:12px; }
+    .qr img { width:180px; height:180px; border-radius:10px; background:#fff; padding:6px; border:1px solid var(--border); }
+    .pay-btn { width:100%; margin-top:10px; border:none; padding:12px; border-radius:10px; background: var(--accent); color:#fff; font-weight:700; cursor:pointer; }
+    .pay-btn:disabled { opacity:0.6; cursor:not-allowed; }
+    .footer { margin-top:14px; }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <div class="title">Your Cart</div>
+        <div class="sub">Review items, update quantity, and pay via UPI.</div>
+      </div>
+      <a class="btn" href="/formerproject.html">Continue Shopping</a>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="section-title">Items</div>
+        <div id="content"></div>
+      </div>
+      <div class="card">
+        <div class="section-title">Checkout</div>
+        <div class="field">
+          <label>Delivery Address</label>
+          <textarea id="deliveryAddress" placeholder="Enter full delivery address" required></textarea>
+        </div>
+        <div class="field">
+          <label>UPI ID</label>
+          <input type="text" id="upiId" placeholder="name@bank" />
+        </div>
+        <div class="qr">
+          <img id="upiQr" alt="UPI QR" />
+        </div>
+        <button class="pay-btn" id="payUpi">Pay via UPI</button>
+        <div class="footer sub">UPI QR refreshes every 5 minutes.</div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const content = document.getElementById("content");
+    const userData = JSON.parse(localStorage.getItem("userData") || "null");
+    const uid = userData && (userData.id || userData.userid);
+    const cartKey = uid ? `cartItems:${uid}` : "cartItems:guest";
+    let cart = JSON.parse(localStorage.getItem(cartKey) || "[]");
+    const payBtn = document.getElementById("payUpi");
+    const upiInput = document.getElementById("upiId");
+    const upiQr = document.getElementById("upiQr");
+
+    function priceValue(text) {
+      const n = parseFloat((text || "").replace(/[^\d.]/g, "") || "0");
+      return isNaN(n) ? 0 : n;
+    }
+
+    function saveCart() {
+      localStorage.setItem(cartKey, JSON.stringify(cart));
+    }
+
+    function renderCart() {
+      if (!Array.isArray(cart) || cart.length === 0) {
+        content.innerHTML = '<p class="empty">Your cart is empty.</p>';
+        payBtn.disabled = true;
+        upiQr.removeAttribute("src");
+        return;
+      }
+
+      let total = 0;
+      const rows = cart.map((c, idx) => {
+        const price = priceValue(c.price);
+        const qty = c.qty || 1;
+        total += price * qty;
+        const img = c.image || "";
+        return `
+          <div class="item">
+            <img class="thumb" src="${img}" alt="${c.title}">
+            <div>
+              <h4>${c.title}</h4>
+              <div class="price">${c.price}</div>
+            </div>
+            <div>
+              <div class="qty">
+                <button class="qty-btn" data-action="dec" data-idx="${idx}">-</button>
+                <span>${qty}</span>
+                <button class="qty-btn" data-action="inc" data-idx="${idx}">+</button>
+              </div>
+              <div style="margin-top:8px;">
+                <button class="remove-btn" data-action="remove" data-idx="${idx}">Remove</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      content.innerHTML = `
+        ${rows}
+        <div class="total">Total: Rs ${total.toFixed(2)}</div>
+      `;
+
+      let qrTimer = null;
+
+      function updateQr() {
+        const upiId = upiInput.value.trim();
+        if (!upiId) {
+          upiQr.removeAttribute("src");
+          return;
+        }
+        const now = Date.now();
+        const uri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=FarmFresh&am=${encodeURIComponent(total.toFixed(2))}&cu=INR&tn=Order-${now}`;
+        upiQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(uri)}&t=${now}`;
+      }
+
+      upiInput.addEventListener("input", updateQr);
+      updateQr();
+
+      if (qrTimer) clearInterval(qrTimer);
+      qrTimer = setInterval(updateQr, 5 * 60 * 1000);
+      payBtn.disabled = false;
+    }
+
+    content.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-action]");
+      if (!btn) return;
+      const idx = parseInt(btn.getAttribute("data-idx"), 10);
+      const action = btn.getAttribute("data-action");
+      if (isNaN(idx) || !cart[idx]) return;
+      if (action === "inc") cart[idx].qty = (cart[idx].qty || 1) + 1;
+      if (action === "dec") {
+        cart[idx].qty = Math.max(1, (cart[idx].qty || 1) - 1);
+      }
+      if (action === "remove") {
+        cart.splice(idx, 1);
+      }
+      saveCart();
+      renderCart();
+    });
+
+    renderCart();
+
+    payBtn.addEventListener("click", async () => {
+        const upiId = upiInput.value.trim();
+        const address = document.getElementById("deliveryAddress").value.trim();
+        if (!uid) {
+          alert("Please login first.");
+          window.location.href = "/formerlogin.html";
+          return;
+        }
+        if (!upiId) {
+          alert("Enter UPI ID.");
+          return;
+        }
+        if (!address) {
+          alert("Enter delivery address.");
+          return;
+        }
+
+        try {
+          const res = await fetch("http://127.0.0.1:8000/api/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify({
+              user_id: uid,
+              items: cart,
+              total: `Rs ${cart.reduce((sum, item) => sum + priceValue(item.price) * (item.qty || 1), 0).toFixed(2)}`,
+              method: "UPI",
+              upi_id: upiId,
+              address: address
+            })
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert(err.detail || "Payment failed.");
+            return;
+          }
+          localStorage.removeItem(cartKey);
+          alert("Payment success.");
+          window.location.href = "/orders.html";
+        } catch (_) {
+          alert("Unable to reach server.");
+        }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Secure Login | Your Company Name</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Playfair+Display:wght@500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      --primary-color: #2691d9;
+      --primary-hover: #1a6fb3;
+      --secondary-color: #f8f9fa;
+      --text-color: #333;
+      --light-gray: #adadad;
+      --border-radius: 8px;
+      --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+                  url('https://images.pexels.com/photos/31472288/pexels-photo-31472288/free-photo-of-idyllic-evening-landscape-with-lone-tree.jpeg') no-repeat center center / cover;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--text-color);
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 450px;
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 2.5rem;
+      box-shadow: var(--box-shadow);
+      transition: transform 0.3s ease;
+    }
+
+    .login-container:hover {
+      transform: translateY(-5px);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .login-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .login-header img {
+      width: 36px;
+      height: 36px;
+    }
+
+    .form-group {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--light-gray);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      pointer-events: none;
+    }
+
+    .form-group label i {
+      font-size: 1rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+      border: none;
+      border-bottom: 2px solid var(--light-gray);
+      font-size: 1rem;
+      background: transparent;
+      transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-bottom-color: var(--primary-color);
+    }
+
+    .form-control:focus + label,
+    .form-control:not(:placeholder-shown) + label {
+      top: -0.5rem;
+      font-size: 0.8rem;
+      color: var(--primary-color);
+    }
+
+    .utility-links {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 1.5rem 0;
+      font-size: 0.9rem;
+    }
+
+    .show-password {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .forgot-password {
+      color: var(--primary-color);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .forgot-password:hover {
+      color: var(--primary-hover);
+      text-decoration: underline;
+    }
+
+    .captcha-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .captcha-image {
+      height: 50px;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      padding: 0.25rem;
+      background: var(--secondary-color);
+    }
+
+    .captcha-input {
+      flex: 1;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+    }
+
+    .captcha-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(38, 145, 217, 0.2);
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 0.75rem;
+      border: none;
+      border-radius: var(--border-radius);
+      background-color: var(--primary-color);
+      color: white;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-login:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .signup-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .signup-link a {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+
+    .signup-link a:hover {
+      color: var(--primary-hover);
+      text-decoration: underline;
+    }
+
+    @media (max-width: 576px) {
+      .login-container {
+        width: 90%;
+        padding: 1.5rem;
+      }
+
+      .captcha-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-header">
+      <h2>
+        <img src="https://logodix.com/logo/1713924.png" alt="Company Logo">
+        Login
+      </h2>
+    </div>
+
+    <form id="loginForm" novalidate autocomplete="off">
+      <!-- Username Field -->
+      <div class="form-group">
+        <input type="text" class="form-control" name="txtuser" id="username" placeholder=" " required>
+        <label for="username">
+          <i class="fas fa-user"></i> Email
+        </label>
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <input type="password" class="form-control" name="txtpsw" id="password" placeholder=" " required>
+        <label for="password">
+          <i class="fas fa-lock"></i> Password
+        </label>
+      </div>
+
+      <!-- Utility Links -->
+      <div class="utility-links">
+        <div class="show-password">
+          <input type="checkbox" id="showPassword">
+          <label for="showPassword">Show Password</label>
+        </div>
+        <a href="forgot_password.html" class="forgot-password">Forgot password?</a>
+      </div>
+
+      <!-- CAPTCHA Section -->
+      <div class="captcha-container">
+        <img src="http://127.0.0.1:8000/api/captcha" alt="CAPTCHA Code" class="captcha-image" id="captchaImage" crossorigin="use-credentials">
+        <input type="text" name="captcha" class="captcha-input" placeholder="Enter CAPTCHA" required id="captchaInput">
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="btn-login" name="submit">
+        <i class="fas fa-sign-in-alt"></i> Login
+      </button>
+
+      <!-- Signup Link -->
+      <div class="signup-link">
+        Not a member? <a href="signup.html">Create an account</a>
+      </div>
+      <div class="signup-link">
+        Are you an admin? <a href="admin_login.html">Login with Admin</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // This would be in your login page's JavaScript
+function handleLoginSuccess(userData) {
+    // Store login status and user data
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userData', JSON.stringify({
+        username: userData.username,
+        userid: userData.id,
+        id: userData.id
+    }));
+    
+    // Redirect to products page
+    window.location.href = '/formerproject.html';
+}
+    const API_BASE = "http://127.0.0.1:8000";
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    if (error) {
+      alert(decodeURIComponent(error));
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const showPassword = document.getElementById('showPassword');
+      const passwordField = document.getElementById('password');
+
+      showPassword.addEventListener('change', function () {
+        passwordField.type = this.checked ? 'text' : 'password';
+      });
+
+      const loginForm = document.getElementById('loginForm');
+      loginForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const captcha = document.getElementById('captchaInput').value.trim();
+
+        if (!username || !password || !captcha) {
+          alert('Please fill in all required fields.');
+          return false;
+        }
+
+        try {
+          const res = await fetch(`${API_BASE}/api/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ username, password, captcha })
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            const msg = err.detail || 'Login failed.';
+            alert(msg);
+            return false;
+          }
+
+          const data = await res.json();
+          handleLoginSuccess(data);
+          return true;
+        } catch (err) {
+          alert('Unable to reach server. Please try again.');
+          return false;
+        }
+      });
+
+      const captchaImage = document.getElementById('captchaImage');
+      captchaImage.addEventListener('click', function () {
+        this.src = `${API_BASE}/api/captcha?` + new Date().getTime();
+      });
+    });
+  </script>
+</body>
+</html>
