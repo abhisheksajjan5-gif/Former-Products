@@ -1,7 +1,6 @@
-from datetime import datetime
-from fastapi import APIRouter, HTTPException, Request, Response
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from .auth import create_access_token, get_current_user
 from .db import db_conn
 from .utils import generate_captcha_text, now_str
 
@@ -61,7 +60,8 @@ async def login(request: Request):
         if not row:
             raise HTTPException(status_code=401, detail="Invalid username or password.")
 
-        return {"username": row["username"], "id": row["id"]}
+        token = create_access_token(row["id"], row["username"])
+        return {"username": row["username"], "id": row["id"], "access_token": token, "token_type": "bearer"}
 
 
 @router.post("/signup")
@@ -97,23 +97,12 @@ async def signup(request: Request):
 
 
 @router.get("/account")
-async def account_details(user_id: int | None = None):
-    if not user_id:
-        raise HTTPException(status_code=400, detail="Missing user_id.")
-    with db_conn() as conn:
-        row = conn.execute(
-            "SELECT id, name, username FROM users WHERE id = ?",
-            (user_id,),
-        ).fetchone()
-    if not row:
-        raise HTTPException(status_code=404, detail="User not found.")
-    return {"id": row["id"], "name": row["name"], "username": row["username"]}
+async def account_details(current_user: dict = Depends(get_current_user)):
+    return current_user
 
 
 @router.get("/orders")
-async def orders(user_id: int | None = None):
-    if not user_id:
-        raise HTTPException(status_code=400, detail="Missing user_id.")
+async def orders(current_user: dict = Depends(get_current_user)):
     with db_conn() as conn:
         rows = conn.execute(
             """
@@ -122,15 +111,13 @@ async def orders(user_id: int | None = None):
             WHERE user_id = ?
             ORDER BY id DESC
             """,
-            (user_id,),
+            (current_user["id"],),
         ).fetchall()
         return [dict(r) for r in rows]
 
 
 @router.get("/payments")
-async def payments(user_id: int | None = None):
-    if not user_id:
-        raise HTTPException(status_code=400, detail="Missing user_id.")
+async def payments(current_user: dict = Depends(get_current_user)):
     with db_conn() as conn:
         rows = conn.execute(
             """
@@ -139,22 +126,21 @@ async def payments(user_id: int | None = None):
             WHERE user_id = ?
             ORDER BY id DESC
             """,
-            (user_id,),
+            (current_user["id"],),
         ).fetchall()
         return [dict(r) for r in rows]
 
 
 @router.post("/checkout")
-async def checkout(request: Request):
+async def checkout(request: Request, current_user: dict = Depends(get_current_user)):
     data = await request.json()
-    user_id = data.get("user_id")
     items = data.get("items") or []
     total = (data.get("total") or "").strip()
     method = (data.get("method") or "").strip()
     upi_id = (data.get("upi_id") or "").strip()
     address = (data.get("address") or "").strip()
 
-    if not user_id or not items or not total or not method:
+    if not items or not total or not method:
         raise HTTPException(status_code=400, detail="Missing checkout data.")
 
     if method.upper() == "UPI" and not upi_id:
@@ -171,7 +157,7 @@ async def checkout(request: Request):
             INSERT INTO orders (user_id, item, amount, status, created_at)
             VALUES (?, ?, ?, ?, ?)
             """,
-            (user_id, item_label, total, "PAID", created_at),
+            (current_user["id"], item_label, total, "PAID", created_at),
         )
         order_id = conn.execute("SELECT last_insert_rowid() AS id").fetchone()["id"]
         conn.execute(
@@ -179,7 +165,7 @@ async def checkout(request: Request):
             INSERT INTO payments (user_id, order_id, amount, method, status, created_at)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (user_id, order_id, total, method.upper(), "SUCCESS", created_at),
+            (current_user["id"], order_id, total, method.upper(), "SUCCESS", created_at),
         )
         conn.commit()
 

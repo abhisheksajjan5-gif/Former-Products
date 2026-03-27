@@ -31,13 +31,19 @@
     const API_BASE = "http://127.0.0.1:8000";
     const content = document.getElementById("content");
 
-    const userData = JSON.parse(localStorage.getItem("userData") || "null");
-    const uid = userData && (userData.id || userData.userid);
-    if (!uid) {
+    const token = localStorage.getItem("authToken") || "";
+    if (!token) {
       content.innerHTML = '<p class="empty">Please login first.</p>';
     } else {
-      fetch(`${API_BASE}/api/orders?user_id=${uid}`)
+      fetch(`${API_BASE}/api/orders`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      })
       .then(r => {
+        if (r.status === 401) {
+          localStorage.removeItem("authToken");
+          content.innerHTML = '<p class="empty">Session expired. Please login again.</p>';
+          return null;
+        }
         return r.json();
       })
       .then(rows => {

@@ -283,6 +283,9 @@ function handleLoginSuccess(userData) {
         userid: userData.id,
         id: userData.id
     }));
+    if (userData.access_token) {
+        localStorage.setItem('authToken', userData.access_token);
+    }
     
     // Redirect to products page
     window.location.href = '/formerproject.html';

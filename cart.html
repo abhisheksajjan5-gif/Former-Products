@@ -87,6 +87,7 @@
     const content = document.getElementById("content");
     const userData = JSON.parse(localStorage.getItem("userData") || "null");
     const uid = userData && (userData.id || userData.userid);
+    const token = localStorage.getItem("authToken") || "";
     const cartKey = uid ? `cartItems:${uid}` : "cartItems:guest";
     let cart = JSON.parse(localStorage.getItem(cartKey) || "[]");
     const payBtn = document.getElementById("payUpi");
@@ -185,7 +186,7 @@
     payBtn.addEventListener("click", async () => {
         const upiId = upiInput.value.trim();
         const address = document.getElementById("deliveryAddress").value.trim();
-        if (!uid) {
+        if (!token) {
           alert("Please login first.");
           window.location.href = "/formerlogin.html";
           return;
@@ -202,9 +203,12 @@
         try {
           const res = await fetch("http://127.0.0.1:8000/api/checkout", {
             method: "POST",
-            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
             body: JSON.stringify({
-              user_id: uid,
               items: cart,
               total: `Rs ${cart.reduce((sum, item) => sum + priceValue(item.price) * (item.qty || 1), 0).toFixed(2)}`,
               method: "UPI",
