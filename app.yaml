@@ -1,0 +1,12 @@
+name: farmfresh-api
+services:
+- name: fastapi-app
+  github:
+    repo: your-username/your-repo  # Replace with your GitHub repo
+    branch: main
+  build_command: pip install -r requirements.txt
+  run_command: python main.py
+  http_port: 8000
+  envs:
+  - key: ENVIRONMENT
+    value: production
